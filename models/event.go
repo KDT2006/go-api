@@ -1,26 +1,27 @@
 package models
 
 import (
-	"rest-api/db"
 	"time"
+
+	"rest-api/db"
 )
 
 type Event struct {
 	ID          int64
-	Name        string    `binding:required`
-	Description string    `binding:required`
-	Location    string    `binding:required`
-	DateTime    time.Time `binding:required`
-	UserID      int
+	Name        string    `binding:"required"`
+	Description string    `binding:"required"`
+	Location    string    `binding:"required"`
+	DateTime    time.Time `binding:"required"`
+	UserID      int64
 }
 
 var events = []Event{}
 
-func (e Event) Save() error {
+func (e *Event) Save() error {
 	query := `
 	INSERT INTO events(name, description, location, dateTime, user_id) 
 	VALUES (?, ?, ?, ?, ?)`
-	stmt, err := db.DB.Prepare(query) // more efficient to prepare query in terms of memory and reusability
+	stmt, err := db.DB.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -35,13 +36,15 @@ func (e Event) Save() error {
 }
 
 func GetAllEvents() ([]Event, error) {
-	query := `SELECT * FROM events`
+	query := "SELECT * FROM events"
 	rows, err := db.DB.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
 	var events []Event
+
 	for rows.Next() {
 		var event Event
 		err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
@@ -52,11 +55,12 @@ func GetAllEvents() ([]Event, error) {
 
 		events = append(events, event)
 	}
+
 	return events, nil
 }
 
 func GetEventByID(id int64) (*Event, error) {
-	query := `SELECT * FROM events WHERE ID = ?`
+	query := "SELECT * FROM events WHERE id = ?"
 	row := db.DB.QueryRow(query, id)
 
 	var event Event
@@ -72,9 +76,10 @@ func (event Event) Update() error {
 	query := `
 	UPDATE events
 	SET name = ?, description = ?, location = ?, dateTime = ?
-	WHERE id = ? 
+	WHERE id = ?
 	`
 	stmt, err := db.DB.Prepare(query)
+
 	if err != nil {
 		return err
 	}
@@ -86,10 +91,9 @@ func (event Event) Update() error {
 }
 
 func (event Event) Delete() error {
-	query := `
-	DELETE FROM events WHERE id = ?
-	`
+	query := "DELETE FROM events WHERE id = ?"
 	stmt, err := db.DB.Prepare(query)
+
 	if err != nil {
 		return err
 	}
@@ -97,6 +101,5 @@ func (event Event) Delete() error {
 	defer stmt.Close()
 
 	_, err = stmt.Exec(event.ID)
-
 	return err
 }
